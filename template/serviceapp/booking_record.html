@@ -1,0 +1,178 @@
+{% extends "common.html" %}
+    {% block content %}
+    {% load static %}
+    <table class="table align-middle mb-0 bg-white">
+        <thead class="bg-light">
+          <tr>
+            <th>#</th>
+            <th>Client</th>
+            <th>Service Name</th>
+            <th>Date</th>
+            <th>HOD</th>
+            <th>Price</th>
+            <th>Payment Status</th>
+            <th>Make Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if services %}
+          {% for service in services %} 
+          <tr>
+            <td>
+              <p class="fw-normal mb-1">Book-0{{service.booking_id}}</p>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                  <div class="ms-3">
+                    <p class="fw-bold mb-1">{{service.user.first_name}} {{service.user.last_name}}</p>
+                  </div>
+                </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="ms-3">
+                  <p class="fw-bold mb-1">{{service.service_name}}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                  <div class="ms-3">
+                    <p class="fw-bold mb-1">{{service.date_created}}</p>
+                  </div>
+                </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="ms-3">
+                  <p class="fw-bold mb-1">Dr. {{service.hod.first_name}} {{service.hod.last_name}}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              <p class="fw-normal mb-1" >${{service.price}}</p>
+            </td>
+            <td>
+                {% if service.payment == 1 %}
+                <p class="fw-normal mb-1 text-success">Paid</p>
+                {% else %}
+                <p class="fw-normal mb-1 text-info">Pending</p>
+                {% endif %}
+                
+            </td>
+            <td>
+              <!-- Button trigger modal -->
+              <button type="button" class="btn btn-link btn-sm text-primary btn-rounded" data-bs-toggle="modal" data-bs-target="#exampleModal_{{service.booking_id}}">
+                Make Payment
+              </button>
+
+                            <!-- Modal -->
+              <div class="modal fade" id="exampleModal_{{service.booking_id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <form>
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5" id="exampleModalLabel">{{service.service_name}}</h1>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>
+                        You are about to pay {{service.price}} for {{service.service_name}}
+                      </p>
+                      <p id="prices" style="display:none;">{{service.price}}
+                      </p>
+                      <p id="names" style="display:none;">
+                        {{service.user.first_name}} {{service.user.last_name}}
+                      </p>
+                      <p id="emails" style="display:none;">
+                        {{service.user.email}}
+                      </p>
+                      <p id="success_url" style="display:none;">
+                        {% url "payment_success" service.booking_id %}
+                      </p>
+                      <p id="fail_url" style="display:none;">
+                        {% url "payment_fail" service.booking_id %}
+                      </p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" id="start-payment-button" onclick="makePayment()">Pay Now</button>
+                    </div>
+                  </div></form>
+                </div>
+              </div>
+            </td>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+      </table>
+
+
+      <script src="https://checkout.flutterwave.com/v3.js"></script>
+      
+      <script>  
+        let price = document.getElementById('prices').textContent;
+        let emails = document.getElementById('emails').textContent;
+        let names = document.getElementById('names').textContent;
+        let success_url = document.getElementById('success_url').textContent;
+
+        let fail_url = document.getElementById('fail_url').textContent;
+        console.log(price)
+       
+        function makePayment() {
+          FlutterwaveCheckout({
+            public_key: "FLWPUBK_TEST-7aa3af6adef721b8cfef7ace5a760ffd-X",
+            tx_ref: "txref-DI0NzMx12",
+            amount: price ,
+            currency: "NGN",
+            payment_options: "card, banktransfer, ussd",
+            meta: {
+              source: "docs-inline-test",
+              consumer_mac: "92a3-912ba-1192a",
+            },
+            customer: {
+              email: emails,
+              phone_number: "08100000000",
+              name: names,
+            },
+            customizations: {
+              title: "Flutterwave Developers",
+              description: "Test Payment",
+              logo: "https://checkout.flutterwave.com/assets/img/rave-logo.png",
+            },
+          });
+        }
+        
+        {% comment %} function makePayment() {
+          FlutterwaveCheckout({
+            public_key: "FLWPUBK_TEST-337d4e3e6c0c10c22b28cac389a35d46-X",
+            tx_ref: "txref-DI0NzMx12",
+            amount: 2500,
+            currency: "NGN",
+            payment_options: "card, banktransfer, ussd",
+            redirect_url : success_url,
+            meta: {
+              source: "docs-inline-test",
+              consumer_mac: "92a3-912ba-1192a",
+            },
+            customer: {
+              email: email ,
+              phone_number: "08100000000",
+              name: names,
+            },
+            customizations: {
+              title: "Flutterwave Developers",
+              description: "Test Payment",
+              logo: "https://checkout.flutterwave.com/assets/img/rave-logo.png",
+            },
+            onclose: function(incomplete) {
+              if (incomplete === true ){
+                window.location = fail_url
+              }
+            }
+          });
+        } {% endcomment %}
+      </script>
+    {% endblock %}
+    
+    
